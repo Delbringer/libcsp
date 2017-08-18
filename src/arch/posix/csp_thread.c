@@ -32,23 +32,24 @@ int csp_thread_create(csp_thread_return_t (* routine)(void *), const char * cons
 	
 	if( pthread_attr_init(&attributes) == 0 )
 	{
+		attr_ref = &attributes;
+#ifdef PTHREAD_STACK_MIN
 		unsigned int stack_size = PTHREAD_STACK_MIN;// use at least one memory page
 		
 		while(stack_size < stack_depth)// must reach at least the provided size
 		{
 			stack_size += PTHREAD_STACK_MIN;// keep memory page boundary (some systems may fail otherwise))
 		}
-		attr_ref = &attributes;
-		
-		pthread_attr_setdetachstate(attr_ref, PTHREAD_CREATE_DETACHED);// do not waste memory on each call
 		pthread_attr_setstacksize(attr_ref, stack_size);
+#endif// PTHREAD_STACK_MIN
+		pthread_attr_setdetachstate(attr_ref, PTHREAD_CREATE_DETACHED);// do not waste memory on each call
 	}
 	else
 	{
 		attr_ref = NULL;
 	}
 	return_code = pthread_create(handle, attr_ref, routine, parameters);
-	if( attr_ref != NULL ) pthread_attr_destroy(&attr_ref);
+	if( attr_ref != NULL ) pthread_attr_destroy(attr_ref);
 	
 	return return_code;
 }
